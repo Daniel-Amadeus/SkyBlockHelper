@@ -1,0 +1,16 @@
+[
+{
+  "modid": "DSH",
+  "name": "Deus' Skyblock Helper",
+  "description": "Helps Deus with Skyblock",
+  "version": "1.4-9p",
+  "mcversion": "1.8",
+  "url": "none :/",
+  "updateUrl": "",
+  "authorList": ["Deus"],
+  "credits": "The Forge and FML guys, for making this possible",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
