@@ -23,19 +23,22 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class NetherwartFarm {
 
 	private enum Status {
-		start, farm, wait1, goToSubsation, goToNetherwart, sellNetherwart, wait2, goToEntry, goToBreakpoint, eat
+		start, farm, wait1, goToSubsation, goToNetherwart, sellNetherwart, wait2, goToFood, wait3, goToEntry, goToBreakpoint, eat
 	}
 
 	private static final BlockPos NETHERFARM_START = new BlockPos(-2067, 202, 2155);
 	private static final BlockPos NETHERFARM_END = new BlockPos(-2132, 202, 2189);
+
+	private static final BlockPos FOOD_STATION = new BlockPos(-2101, 202, 2195); // TODO
 	private static final BlockPos NETHERFARM_ENTRY = new BlockPos(-2099, 202, 2190);
 
-	private static final BlockPos NETHERWART_SUBSTATION = new BlockPos(7, 198, 91); // gravel in grass - works ok
+	private static final BlockPos NETHERWART_SUBSTATION = new BlockPos(7, 198, 91);
 	private static final BlockPos NETHERWART_SELL_PLACE = new BlockPos(-15, 198, 80);
 
 	private static final ItemStack STONE_AXE = new ItemStack(Items.stone_axe);
 	private static final ItemStack NETHERWART = new ItemStack(Items.nether_wart);
-	//private static final ItemStack MELON = new ItemStack(Items.melon);
+	private static final ItemStack MELON = new ItemStack(Items.melon);
+	// private static final ItemStack MELON = new ItemStack(Items.melon);
 
 	private static final PropertyInteger AGE = PropertyInteger.create("age", 0, 3);
 
@@ -53,7 +56,6 @@ public class NetherwartFarm {
 
 	private InteractionHelper iah;
 
-	@SuppressWarnings("unused")
 	private LogScreen logScreen;
 
 	public NetherwartFarm(Minecraft minecraft, InteractionHelper interactionHelper, LogScreen testBar) {
@@ -61,10 +63,11 @@ public class NetherwartFarm {
 		iah = interactionHelper;
 		this.logScreen = testBar;
 	}
-	
-	public void start(){
+
+	public void start() {
 		BlockPos playerPos = mc.thePlayer.getPosition();
-		if (playerPos.getX() >= NETHERFARM_START.getX() && playerPos.getX() <= NETHERFARM_END.getX() && playerPos.getZ() >= NETHERFARM_START.getZ() && playerPos.getZ() <= NETHERFARM_END.getZ()) {
+		if (playerPos.getX() >= NETHERFARM_START.getX() && playerPos.getX() <= NETHERFARM_END.getX()
+				&& playerPos.getZ() >= NETHERFARM_START.getZ() && playerPos.getZ() <= NETHERFARM_END.getZ()) {
 			netherFarmBreakPoint = playerPos;
 		}
 		netherFarming = true;
@@ -72,8 +75,8 @@ public class NetherwartFarm {
 		mc.thePlayer.sendChatMessage("/warp shop");
 		status = Status.wait1;
 	}
-	
-	public void stop(){
+
+	public void stop() {
 		netherFarming = false;
 		if (png != null)
 			png.clearPathEntity();
@@ -85,18 +88,17 @@ public class NetherwartFarm {
 
 		netherFarmBreakPoint = mc.thePlayer.getPosition();
 	}
-	
+
 	@SubscribeEvent
 	public void onClientChatReceivedEvent(ClientChatReceivedEvent event) {
-		
+
 		String unformattedText = event.message.getUnformattedText();
-		
-		if(unformattedText.startsWith("Error:")
-				|| unformattedText.startsWith("Hey! Sorry")){
+
+		if (unformattedText.startsWith("Error:") || unformattedText.startsWith("Hey! Sorry")) {
 			stop();
 			start();
 		}
-		
+
 	}
 
 	public void handleNetherwartFarm() {
@@ -127,12 +129,12 @@ public class NetherwartFarm {
 			long currTime = System.currentTimeMillis();
 			long dTime = currTime - lastActionTimeFarmCycle;
 
-			if(status == Status.eat){
-				if(mc.thePlayer.getFoodStats().getFoodLevel() >= 20){
+			if (status == Status.eat) {
+				if (mc.thePlayer.getFoodStats().getFoodLevel() >= 20) {
 					iah.useItem(false);
 					goDirctlyTo(netherFarmBreakPoint);
 					status = Status.goToBreakpoint;
-				}else{
+				} else {
 					iah.useItem(true);
 				}
 			}
@@ -140,7 +142,7 @@ public class NetherwartFarm {
 			if (status == Status.farm) {
 
 				int foodLevel = iah.foodLevel();
-				if (foodLevel >=-1 && foodLevel < 6) {
+				if (foodLevel >= -1 && foodLevel < 6) {
 					netherFarmBreakPoint = mc.thePlayer.getPosition();
 					png = null;
 					pmh = null;
@@ -263,6 +265,20 @@ public class NetherwartFarm {
 				}
 			}
 			if (status == Status.wait2 && dTime > 1500) {
+				if (iah.itemInInv(MELON) < 32) {
+					goDirctlyTo(FOOD_STATION);
+					status = Status.goToFood;
+				} else {
+					goDirctlyTo(NETHERFARM_ENTRY);
+					status = Status.goToEntry;
+				}
+			}
+			if (status == Status.goToFood && png.noPath()) {
+				lastActionTimeFarmCycle = currTime;
+				dTime = 0;
+				status = Status.wait3;
+			}
+			if (status == Status.wait3 && dTime > 5000) {
 				goDirctlyTo(NETHERFARM_ENTRY);
 				status = Status.goToEntry;
 			}
@@ -272,16 +288,18 @@ public class NetherwartFarm {
 			}
 			if (status == Status.goToBreakpoint && png.noPath()) {
 
-//				private static final BlockPos NETHERFARM_START = new BlockPos(-2067, 202, 2155);
-//				private static final BlockPos NETHERFARM_END = new BlockPos(-2132, 202, 2189);
-				
-				if(netherFarmBreakPoint.getX() < NETHERFARM_END.getX() ||
-						netherFarmBreakPoint.getX() > NETHERFARM_START.getX() ||
-						netherFarmBreakPoint.getZ() < NETHERFARM_START.getZ() ||
-						netherFarmBreakPoint.getZ() > NETHERFARM_END.getZ()){
+				// private static final BlockPos NETHERFARM_START = new
+				// BlockPos(-2067, 202, 2155);
+				// private static final BlockPos NETHERFARM_END = new
+				// BlockPos(-2132, 202, 2189);
+
+				if (netherFarmBreakPoint.getX() < NETHERFARM_END.getX()
+						|| netherFarmBreakPoint.getX() > NETHERFARM_START.getX()
+						|| netherFarmBreakPoint.getZ() < NETHERFARM_START.getZ()
+						|| netherFarmBreakPoint.getZ() > NETHERFARM_END.getZ()) {
 					netherFarmBreakPoint = NETHERFARM_START;
 				}
-				
+
 				int x0 = NETHERFARM_START.getX();
 				int x1 = NETHERFARM_END.getX();
 
@@ -331,7 +349,8 @@ public class NetherwartFarm {
 			pmh = new PlayerMoveHelper(mc);
 		if (png == null)
 			png = new PlayerPathNavigateGround(mc.thePlayer, mc.theWorld, pmh);
-		PathEntity path = new PathEntity(new PathPoint[] { new PathPoint(destination.getX(), destination.getY(), destination.getZ()) });
+		PathEntity path = new PathEntity(
+				new PathPoint[] { new PathPoint(destination.getX(), destination.getY(), destination.getZ()) });
 		png.setPath(path, 1.0f);
 		png.setShouldTrimToMinimal(false);
 	}

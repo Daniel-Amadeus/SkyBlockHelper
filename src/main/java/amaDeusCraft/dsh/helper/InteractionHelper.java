@@ -127,7 +127,6 @@ public class InteractionHelper {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void putBlockFromInvAt(ItemStack itemStack, int index, int count) {
 		for (int i = 0; i < count; i++) {
 			putBlockFromInvAt(itemStack, index);

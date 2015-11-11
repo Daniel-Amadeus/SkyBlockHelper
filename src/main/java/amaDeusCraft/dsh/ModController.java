@@ -13,6 +13,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent;
+import net.minecraftforge.fml.common.network.internal.FMLNetworkHandler;
 
 public class ModController {
 
@@ -92,6 +93,10 @@ public class ModController {
 	@SubscribeEvent
 	public void onTick(TickEvent.ClientTickEvent tick) {
 		//System.out.println("tick");
+		if( isConnected && mc.getCurrentServerData() == null){
+			System.out.println("mc.getCurrentServerData() == null");
+		}
+		//if(mc.isIntegratedServerRunning() == null) System.out.println("mc.isIntegratedServerRunning() == null");
 		if (!isConnected) {
 			long diff = (System.currentTimeMillis() - lastConnectingTryTime) / 1000;
 			if (diff % 10 == 0)
@@ -105,7 +110,7 @@ public class ModController {
 		} else {
 			if (!isAutoStarted) {
 				long diff = (System.currentTimeMillis() - connectionStartTime) / 1000;
-				if (diff > 1/**/) {
+				if (diff > 1) {
 					autoStart();
 				}
 			}
